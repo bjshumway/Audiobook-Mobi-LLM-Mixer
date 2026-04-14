@@ -8,7 +8,7 @@
  * The code is structured into logical modules (objects)
  * for better organization and maintainability.
  */
-
+ 
 // --- 1. State Management ---
 const StateManager = {
     selectedBookId: null,
