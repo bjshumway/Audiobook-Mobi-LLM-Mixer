@@ -1,0 +1,8 @@
+mobi
+nltk
+fuzzywuzzy
+python-Levenshtein # Highly recommended for fuzzywuzzy performance
+google-cloud-speech # For Google Speech-to-Text API
+Flask-Cors # For enabling CORS in Flask
+Flask # For the local web server
+pydub # Useful for audio manipulation/inspection

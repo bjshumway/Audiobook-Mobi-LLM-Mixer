@@ -1,0 +1,143 @@
+/* Basic Reset */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    /* Dark Mode (Gray Slate) Variables */
+    --primary-bg: #1a1a1a;
+    --secondary-bg: #2d2d2d;
+    --text-color: #f0f0f0;
+    --highlight-color: #5a4b4b; /* A subtle gray-red for highlighting */
+    --accent-color: #bb86fc; /* A touch of subtle color for buttons/links */
+    --border-color: #444;
+
+    /* Font Sizing & Line Height Defaults */
+    --base-font-size: 1rem;
+    --line-height-multiplier: 1.6;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+    line-height: var(--line-height-multiplier);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+#app {
+    width: 100%;
+    max-width: 800px; /* Max width for desktop readability */
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--secondary-bg);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.hidden {
+    display: none; /* Hide screens that are not active */
+}
+
+/* Common Button Styles */
+button {
+    background-color: var(--accent-color);
+    color: var(--primary-bg);
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: var(--base-font-size);
+    margin: 5px;
+    transition: background-color 0.2s ease;
+}
+button:hover:not(:disabled) {
+    background-color: #a06eef;
+}
+button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Specific to book selection */
+#book-selection-screen {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+#book-select-dropdown {
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+    border-radius: 5px;
+    margin-bottom: 15px;
+    min-width: 250px;
+}
+
+/* Specific to reader screen */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 15px;
+}
+
+#book-content {
+    flex-grow: 1; /* Allows content to take up available space */
+    overflow-y: auto; /* Enable scrolling for book content */
+    padding: 10px 0;
+}
+
+.paragraph {
+    padding: 5px 0;
+    cursor: pointer;
+}
+
+.paragraph.highlighted {
+    background-color: var(--highlight-color);
+    border-radius: 3px;
+}
+
+.audio-controls {
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Mobile Responsiveness (iPhone-first) */
+@media (max-width: 800px) {
+    #app {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+    }
+}
+
+/* PC-specific elements (initially hidden) */
+.pc-only {
+    display: none;
+}
