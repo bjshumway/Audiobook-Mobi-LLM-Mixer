@@ -1,144 +1,149 @@
 /**
  * Audio-Sync Book Reader - Frontend Application Logic
- *
- * This file orchestrates the entire frontend experience,
- * managing UI, audio playback, data synchronization, and
- * communication with the Flask backend.
- *
- * The code is structured into logical modules (objects)
- * for better organization and maintainability.
  */
  
 // --- 1. State Management ---
 const StateManager = {
     selectedBookId: null,
-    isMobile: false, // Will be detected on init
+    isMobile: false,
     currentBookData: null,
     currentParagraphIdx: 0,
     currentPage: 0,
-    currentAudioTime: 0,
     playbackRate: 1.0,
 
     init: function() {
-        // Detect if running on mobile
         this.isMobile = /Mobi|Android/i.test(navigator.userAgent);
-        console.log(`Device detected as mobile: ${this.isMobile}`);
-
-        // Load any persisted state (e.g., last selected book)
         const savedState = JSON.parse(localStorage.getItem('audioSyncReaderState')) || {};
         this.selectedBookId = savedState.selectedBookId || null;
         this.playbackRate = savedState.playbackRate || 1.0;
-        // More state can be loaded here as features are added
     },
 
     saveState: function() {
         const stateToSave = {
             selectedBookId: this.selectedBookId,
             playbackRate: this.playbackRate,
-            // Save other essential state here
         };
         localStorage.setItem('audioSyncReaderState', JSON.stringify(stateToSave));
+    }
+};
+
+// --- 2. API Service ---
+const APIService = {
+    // For now, we'll simulate fetching the book list since we are doing local dev
+    fetchBookList: async function() {
+        try {
+            const response = await fetch('/api/books');
+            if (!response.ok) throw new Error("Network response was not ok");
+            return await response.json();
+        } catch (e) {
+            console.warn("Could not fetch from server, using fallback data.");
+            return [{ id: 'wolf_hall', title: 'Wolf Hall', processed: true }];
+        }
     },
 
-    // Updates progress for the currently loaded book
-    updateBookProgress: function() {
-        if (this.currentBookData && this.selectedBookId) {
-            const progress = {
-                last_read_paragraph_idx: this.currentParagraphIdx,
-                last_read_time_offset_seconds: this.currentAudioTime
-            };
-            API_Service.updateProgress(this.selectedBookId, progress)
-                .then(() => console.log("Progress saved."))
-                .catch(error => console.error("Error saving progress:", error));
+    fetchBookData: async function(bookId) {
+        const response = await fetch(`/api/books/${bookId}`);
+        if (!response.ok) throw new Error("Could not load book data.");
+        return await response.json();
+    }
+};
+
+// --- 3. UI Manager ---
+const UIManager = {
+    init: function() {
+        // Wire up the local audio file picker
+        const uploadBtn = document.getElementById('trigger-audio-upload');
+        const fileInput = document.getElementById('local-audio-upload');
+        
+        // If these elements don't exist in your index.html yet, we'll create them dynamically for the test
+        if (!uploadBtn) {
+            this.injectAudioControls();
+        }
+
+        document.getElementById('trigger-audio-upload').addEventListener('click', () => {
+            document.getElementById('local-audio-upload').click();
+        });
+
+        document.getElementById('local-audio-upload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const objectUrl = URL.createObjectURL(file);
+                const audioPlayer = document.getElementById('main-audio-player');
+                audioPlayer.src = objectUrl;
+                console.log("Audio loaded directly from device storage!");
+            }
+        });
+
+        // Mock load book button for now
+        const loadBtn = document.getElementById('load-book-btn');
+        if(loadBtn) {
+            loadBtn.disabled = false;
+            loadBtn.addEventListener('click', () => {
+                this.switchScreen('reader-screen');
+                // We will hook this up to real data later
+                document.getElementById('current-book-title').innerText = "Book Loaded (Preview)";
+            });
+        }
+        
+        const backBtn = document.getElementById('back-to-selection-btn');
+        if(backBtn) {
+            backBtn.addEventListener('click', () => {
+                this.switchScreen('book-selection-screen');
+            });
+        }
+    },
+
+    switchScreen: function(screenId) {
+        document.querySelectorAll('.screen').forEach(s => {
+            s.classList.remove('active');
+            s.classList.add('hidden');
+            s.style.display = 'none'; // Ensure CSS hides it
+        });
+        const target = document.getElementById(screenId);
+        target.classList.remove('hidden');
+        target.classList.add('active');
+        target.style.display = 'block';
+    },
+
+    injectAudioControls: function() {
+        const footer = document.querySelector('.audio-controls');
+        if(footer) {
+            footer.innerHTML = `
+                <input type="file" id="local-audio-upload" accept="audio/mp3" style="display: none;">
+                <button id="trigger-audio-upload" style="margin-bottom: 10px; padding: 10px; cursor: pointer;">📂 Select Audio from Device</button>
+                <audio id="main-audio-player" controls style="width: 100%;"></audio>
+            `;
         }
     }
 };
 
-// --- 2. API Service (stub for now) ---
-const API_Service = {
-    baseUrl: window.location.origin, // Assumes frontend is served from the same origin as Flask
-
-    fetchBookList: async function() {
-        // Placeholder for actual API call
-        const response = await fetch(`${this.baseUrl}/api/books`);
-        if (!response.ok) throw new Error('Failed to fetch book list');
-        return response.json();
-    },
-    fetchBookData: async function(bookId) {
-        // Placeholder for actual API call
-        const response = await fetch(`${this.baseUrl}/api/books/${bookId}`);
-        if (!response.ok) throw new Error(`Failed to fetch book data for ${bookId}`);
-        return response.json();
-    },
-    updateProgress: async function(bookId, progressData) {
-        // Placeholder for actual API call
-        const response = await fetch(`${this.baseUrl}/api/books/${bookId}/progress`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(progressData)
-        });
-        if (!response.ok) throw new Error(`Failed to update progress for ${bookId}`);
-        return response.json();
-    },
-    processBook: async function(bookId) {
-        // Placeholder for actual API call
-        const response = await fetch(`${this.baseUrl}/api/books/${bookId}/process`, {
-            method: 'POST'
-        });
-        if (!response.ok) throw new Error(`Failed to initiate processing for ${bookId}`);
-        return response.json();
-    },
-    exportLLMText: async function(bookId, selection) {
-        // Placeholder for actual API call
-        console.log(`Exporting text from ${bookId} for LLM:`, selection);
-        return {status: "success", message: "Export placeholder complete"};
-    },
-    getAudioUrl: function(bookId) {
-        return `${this.baseUrl}/books/${bookId}/${bookId}.mp3`;
-    }
-};
-
-// --- 3. UI Manager (stub) ---
-const UIManager = {
-    // ... (Functions as defined in README.md)
-    init: function() {
-        // Placeholder: wire up basic event listeners
-        document.getElementById('load-book-btn').addEventListener('click', () => {
-            const bookId = document.getElementById('book-select-dropdown').value;
-            if (bookId) {
-                console.log(`Attempting to load book: ${bookId}`);
-                // Call a function to load the book data and transition to reader view
-            }
-        });
-    }
-};
-
-// --- 4. Audio Player Manager (stub) ---
-const AudioPlayerManager = {
-    // ... (Properties and Functions as defined in README.md)
-    init: function() {
-        // Create the audio element dynamically or reference an existing one
-        this.audioElement = new Audio();
-        this.audioElement.playbackRate = StateManager.playbackRate;
-        // Wire up event listeners for timeupdate, ended, etc.
-    }
-};
-
-// --- 5. Book Reader Manager (stub) ---
+// --- 4. Book Reader Manager ---
 const BookReaderManager = {
-    // ... (Properties and Functions as defined in README.md)
-};
+    renderDummyText: function() {
+        // This is a placeholder so you can see what the UI looks like tonight!
+        const contentArea = document.getElementById('book-content');
+        if(!contentArea) return;
 
-// --- 6. Sync Engine (stub) ---
-const SyncEngine = {
-    // ... (Functions as defined in README.md)
+        let html = '';
+        for(let i=0; i<10; i++) {
+            html += `<p class="paragraph" id="p${i}">This is placeholder paragraph ${i}. Once the python scripts finish running, this area will be populated by the actual extracted text from the MOBI file, broken down beautifully into paragraphs.</p>`;
+        }
+        contentArea.innerHTML = html;
+        
+        // Add click listener for future bidirectional sync
+        document.querySelectorAll('.paragraph').forEach(p => {
+            p.addEventListener('click', (e) => {
+                document.querySelectorAll('.paragraph').forEach(el => el.classList.remove('highlighted'));
+                e.target.classList.add('highlighted');
+                console.log(`User clicked paragraph: ${e.target.id}`);
+            });
+        });
+    }
 };
 
 // --- Initialize Application ---
 document.addEventListener('DOMContentLoaded', () => {
     StateManager.init();
     UIManager.init();
-    AudioPlayerManager.init();
-    // Initial rendering based on state or fetching book list
-    console.log("Frontend loaded.");
+    BookReaderManager.renderDummyText();
 });
